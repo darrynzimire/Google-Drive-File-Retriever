@@ -6,7 +6,11 @@ from google_auth_oauthlib.flow import InstalledAppFlow
 from googleapiclient.discovery import build
 from googleapiclient.errors import HttpError
 import argparse
+from datetime import datetime
 import output
+import io
+import time
+
 
 parser = argparse.ArgumentParser(description='Retrieval of raw FASTQ files from Google drive')
 parser.add_argument('-fl',      type=str, required=False, help='A list of file names to search and retrieve')
@@ -19,6 +23,7 @@ outdir = args.outdir
 
 # If modifying these scopes, delete the file token.json.
 SCOPES = ['https://www.googleapis.com/auth/drive.metadata.readonly']
+DRIVE = build('drive', 'v3', http=creds.authorize(Http()))
 
 
 def authentication():
@@ -65,6 +70,18 @@ def connect_api(creds):
     except HttpError as error:
         # TODO(developer) - Handle errors from drive API.
         print(f'An error occurred: {error}')
+
+
+def download_file(id, filename):
+
+    request = parser.files().get_media(fileId=id)
+    fh = io.FileIO(filename, 'wb')
+    downloader = MediaIoBaseDownload(fh, request)
+    done = False
+    while done is False:
+        status, done = downloader.next_chunk()
+        print("Download %d%%." % int(status.progress() * 100))
+        time.sleep(2)
 
 
 def main():
